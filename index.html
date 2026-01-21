@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Haryana LTC Professional Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <!-- Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;600&display=swap');
+    </style>
+
+    <style>
+        :root {
+            --bg-color: #e0e5ec;
+            --paper-width: 210mm;
+            --paper-height: 297mm;
+        }
+
+body {
+    margin: 0;
+    background-color: var(--bg-color);
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    padding-top: 100px; /* ADD THIS - space for fixed header */
+}
+        .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.main-header p {
+    margin: 5px 0;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.main-header .developer-info {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+
+
+
+        /* --- LEFT PANEL: DATA ENTRY --- */
+.editor-panel {
+    width: 380px;
+    background: #fff;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    z-index: 10;
+    height: calc(100vh - 100px); /* MODIFY THIS - account for header */
+}
+
+
+        .editor-panel h2 { color: #2c3e50; margin-top: 0; }
+        .section-title { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #7f8c8d; 
+            margin-top: 20px; 
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 4px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .spouse-fields {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: grid; gap: 10px;
+            position: sticky; bottom: 0; background: #fff; padding-top: 10px; border-top: 1px solid #eee;
+        }
+        
+        button {
+            padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white;
+        }
+        .btn-pdf { background: #e74c3c; }
+        .btn-word { background: #2980b9; }
+
+        /* --- RIGHT PANEL: LIVE PREVIEW (A4 PAPER) --- */
+.preview-panel {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    height: calc(100vh - 100px); /* ADD THIS - account for header */
+}
+
+        /* A4 Page Styling */
+        .page {
+            width: var(--paper-width);
+            min-height: var(--paper-height);
+            background: white;
+            padding: 25.4mm;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+            box-sizing: border-box;
+            
+            /* Typography matching the PDF - EXACTLY */
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            color: #000;
+            line-height: 1.5; /* 1.5 line spacing as requested */
+        }
+
+        /* --- PROFORMA LAYOUT --- */
+        .header-section { text-align: center; margin-bottom: 30px; }
+        .header-title { font-weight: bold; text-decoration: underline; font-size: 14pt; margin-bottom: 5px; }
+
+        .row-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .col-num {
+            width: 25px;
+            flex-shrink: 0;
+        }
+
+        .col-label {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        .en-label { display: block; }
+        .hi-label { 
+            display: block; 
+            font-family: 'Noto Serif Devanagari', serif; 
+            font-size: 10pt; 
+            font-style: italic; 
+            color: #333; 
+            line-height: 1.3;
+        }
+
+        .col-data {
+            flex-grow: 1;
+            border-bottom: 1px solid #000;
+            min-height: 20px;
+            padding-left: 10px;
+            font-weight: normal;
+        }
+
+        /* Special handling for Yes/No */
+        .yes-no-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .yes-no-right {
+            padding-right: 50px;
+            font-weight: normal;
+        }
+
+        /* --- UNDERTAKING / AFFIDAVIT STYLES --- */
+        .legal-body { 
+            margin-top: 20px; 
+            text-align: justify; 
+            line-height: 1.5;
+        }
+        
+        .para { 
+            margin-bottom: 15px; 
+            display: flex; 
+            text-align: justify;
+            line-height: 1.5;
+        }
+        
+        .para-num { 
+            width: 30px; 
+            flex-shrink: 0; 
+        }
+        
+        .para-text { 
+            flex-grow: 1; 
+            text-align: justify;
+        }
+
+        /* If yes/no spouse working notes */
+        .spouse-notes {
+            margin-top: 15px;
+            margin-left: 25px;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+        
+        .footer-sig {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .sig-block {
+            text-align: center;
+            min-width: 250px;
+        }
+        
+        .sig-line {
+            border-bottom: 1px solid #000;
+            min-height: 20px;
+            margin-bottom: 5px;
+        }
+
+        .footnote {
+            margin-top: 40px;
+            font-size: 10pt;
+            font-style: italic;
+        }
+
+        /* Placeholders */
+        .placeholder { color: #999; }
+
+
+        @media print {
+            body { height: auto; display: block; background: white; }
+            .editor-panel { display: none; }
+            .preview-panel { padding: 0; display: block; }
+            .page { 
+                margin: 0; 
+                box-shadow: none; 
+                page-break-after: always; 
+                width: 100%; 
+                min-height: auto;
+                height: 297mm;
+            }
+            .page:last-child { page-break-after: auto; }
+            .main-header { display: none !important; }
+            body { padding-top: 0; }
+        }
+    </style>
+</head>
+<body>
+<!-- ADD THIS HEADER -->
+    <header class="main-header">
+        <h1>Haryana State LTC Proforma & Undertakings</h1>
+        <p>Professional generation of LTC documents with strict adherence to format.</p>
+        <div class="developer-info">Designed and Developed by: Prof. O.P. Sheoran, CCS Haryana Agricultural University, Hisar</div>
+    </header>
+    <!-- 1. EDITOR PANEL -->
+    <div class="editor-panel">
+        <h2>LTC Application Form</h2>
+        <p style="font-size:11px; color:#7f8c8d;">Fill all details. Leave blank for placeholder lines.</p>
+        
+        <div class="section-title">Basic Information</div>
+        <div class="form-group"><label>Block Year (e.g., 2020-23)</label><input type="text" id="in-block" value="2020-23" oninput="render()"></div>
+        <div class="form-group"><label>Block Period</label><input type="text" id="in-block-period" value="01.01.2020 to 31.12.2023" oninput="render()"></div>
+        
+        <div class="section-title">Personal Details</div>
+        <div class="form-group"><label>Name of Applicant</label><input type="text" id="in-name" placeholder="Full Name" oninput="render()"></div>
+        <div class="form-group"><label>Father's/Husband's Name</label><input type="text" id="in-fh" oninput="render()"></div>
+        <div class="form-group"><label>Designation</label><input type="text" id="in-desig" oninput="render()"></div>
+        <div class="form-group"><label>Name of the Branch</label><input type="text" id="in-branch" oninput="render()"></div>
+        <div class="form-group"><label>Pay-Head of the Applicant</label><input type="text" id="in-pay" oninput="render()"></div>
+        <div class="form-group"><label>Bank A/c No of the Applicant</label><input type="text" id="in-bank" oninput="render()"></div>
+        <div class="form-group"><label>Date of Retirement</label><input type="text" id="in-retire" placeholder="DD.MM.YYYY" oninput="render()"></div>
+        <div class="form-group"><label>Contact No of the Applicant</label><input type="text" id="in-contact" oninput="render()"></div>
+        
+        <div class="section-title">Spouse Information</div>
+        <div class="form-group">
+            <label>Whether the spouse is working or not</label>
+            <select id="in-spouse-working" onchange="toggleSpouseFields(); render();">
+                <option value="">Select...</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        
+        <div class="spouse-fields" id="spouse-fields" style="display:none;">
+            <div class="form-group"><label>Spouse Name</label><input type="text" id="in-spouse-name" oninput="render()"></div>
+            <div class="form-group"><label>Spouse Designation</label><input type="text" id="in-spouse-desig" oninput="render()"></div>
+            <div class="form-group"><label>Spouse Department/Office</label><input type="text" id="in-spouse-dept" oninput="render()"></div>
+        </div>
+        
+        <div class="section-title">Application Details</div>
+        <div class="form-group"><label>Date</label><input type="text" id="in-date" placeholder="DD.MM.YYYY" oninput="render()"></div>
+        <div class="form-group"><label>Place</label><input type="text" id="in-place" value="Chandigarh" oninput="render()"></div>
+
+        <div class="actions">
+            <button class="btn-pdf" onclick="generatePDF()">Download PDF (All 4 Pages)</button>
+            <button class="btn-word" onclick="generateWord()">Download Word (DOCX)</button>
+        </div>
+        
+        <p style="font-size:10px; color:#95a5a6; margin-top:20px; text-align:center;">
+            Developed by Prof. O.P. Sheoran<br>CCS HAU, Hisar
+        </p>
+    </div>
+
+    <!-- 2. LIVE PREVIEW PANEL -->
+    <div class="preview-panel" id="print-area">
+        
+        <!-- PAGE 1: PROFORMA -->
+        <div class="page" id="page-1">
+            <div class="header-section">
+                <div class="header-title">Performa of L.T.C.for the Block Year (<span id="out-block-title"></span>)</div>
+            </div>
+
+            <!-- 1. Name -->
+            <div class="row-item">
+                <div class="col-num">1</div>
+                <div class="col-label">
+                    <span class="en-label">Name of Applicant:</span>
+                    <span class="hi-label">(आवेदक का नाम)</span>
+                </div>
+                <div class="col-data" id="out-name"></div>
+            </div>
+
+            <!-- 2. Father's/Husband's Name -->
+            <div class="row-item">
+                <div class="col-num">2</div>
+                <div class="col-label">
+                    <span class="en-label">Father's/Husband's Name:</span>
+                    <span class="hi-label">(पिता/पति का नाम)</span>
+                </div>
+                <div class="col-data" id="out-fh"></div>
+            </div>
+
+            <!-- 3. Designation -->
+            <div class="row-item">
+                <div class="col-num">3</div>
+                <div class="col-label">
+                    <span class="en-label">Designation of the Applicant:</span>
+                    <span class="hi-label">(आवेदक का पद)</span>
+                </div>
+                <div class="col-data" id="out-desig"></div>
+            </div>
+
+            <!-- 4. Branch -->
+            <div class="row-item">
+                <div class="col-num">4</div>
+                <div class="col-label">
+                    <span class="en-label">Name of the Branch:</span>
+                    <span class="hi-label">(विभाग/कार्यालय)</span>
+                </div>
+                <div class="col-data" id="out-branch"></div>
+            </div>
+
+            <!-- 5. Pay-Head -->
+            <div class="row-item">
+                <div class="col-num">5</div>
+                <div class="col-label">
+                    <span class="en-label">Pay-Head of the Applicant:</span>
+                    <span class="hi-label">(आवेदक का पे-हैड)</span>
+                </div>
+                <div class="col-data" id="out-pay"></div>
+            </div>
+
+            <!-- 6. Bank A/c No -->
+            <div class="row-item">
+                <div class="col-num">6</div>
+                <div class="col-label">
+                    <span class="en-label">Bank A/c No of the Applicant:</span>
+                    <span class="hi-label">(आवेदक का बैंक खाता नं०)</span>
+                </div>
+                <div class="col-data" id="out-bank"></div>
+            </div>
+
+            <!-- 7. Date of Retirement -->
+            <div class="row-item">
+                <div class="col-num">7</div>
+                <div class="col-label">
+                    <span class="en-label">Date of Retirement:</span>
+                    <span class="hi-label">(आवेदक की सेवानिवृति की तिथि)</span>
+                </div>
+                <div class="col-data" id="out-retire"></div>
+            </div>
+
+            <!-- 8. Spouse Working -->
+            <div class="row-item">
+                <div class="col-num">8</div>
+                <div class="col-label">
+                    <span class="en-label">Whether the spouse is working or not</span>
+                    <span class="hi-label">(क्या आवेदक का पति या पत्नी कार्यरत है)</span>
+                </div>
+                <div class="col-data">
+                    <div class="yes-no-box">
+                        <span></span>
+                        <span class="yes-no-right">Yes / No<br>(हाँ / नहीं)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conditional spouse notes -->
+            <div class="spouse-notes" id="spouse-yes-notes" style="display:none;">
+                <em>If yes, then enclose the following:</em><br>
+                <span class="hi-label">(यदि हाँ तो निम्नलिखित संलग्न करें :-)</span><br><br>
+                a) undertaking in respect of the instruction in memo no: 13/19/2008-2SII, dated 18.5.2009.(duly signed by both).<br>
+                <span class="hi-label">(क ज्ञाप क्रमांक 13/19/2008-2SII दिनांक 18.5.2009 के निर्देशों के सन्दर्भ में पति एवम पत्नी द्वारा हस्ताक्षरित अंडरटेकिंग)</span><br><br>
+                b) Original Certificate duly attested by the concerned department/ office of the spouse.<br>
+                <span class="hi-label">(ख पति या पत्नी के संबंधित विभाग/कार्यालय द्वारा सत्यापित मूल प्रमाण पत्र)</span>
+            </div>
+            
+            <div class="spouse-notes" id="spouse-no-notes" style="display:none;">
+                <em>If no, then enclose the undertaking only (duly signed by the applicant only).</em><br>
+                <span class="hi-label">(यदि नहीं तो आवेदक द्वारा हस्ताक्षरित अंडरटेकिंग सलग्न करें)</span>
+            </div>
+
+            <!-- 9. Contact No -->
+            <div class="row-item">
+                <div class="col-num">9</div>
+                <div class="col-label">
+                    <span class="en-label">Contact No of the Applicant</span>
+                    <span class="hi-label">(आवेदक का फोन नम्बर)</span>
+                </div>
+                <div class="col-data" id="out-contact"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer-sig">
+                <div>
+                    <div style="margin-bottom: 20px;">Dated: <span id="out-date"></span></div>
+                </div>
+                <div class="sig-block">
+                    <div>Signature of Applicant</div>
+                    <span class="hi-label">(आवेदक के हस्ताक्षर)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: UNDERTAKING -->
+        <div class="page" id="page-2">
+            <div class="header-section">
+                <div class="header-title">UNDERTAKING</div>
+                <div style="font-size:10pt;">[under para 1(iii) of instruction in memo no: 13/19/2008-2SII dated 18.5.2009]</div>
+            </div>
+
+            <p class="legal-body">It is hereby undertaken that:</p>
+            
+            <div class="para">
+                <div class="para-num">1.</div>
+                <div class="para-text">I am eligible to draw the benefit promised by the scheme put in place vide memo: 13/19/2008-2SII dated 18.5.2009.</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">2.</div>
+                <div class="para-text">None amongst my entitled family members, including the spouse, is either in service of Government of Haryana or in service under the Central Government or any other State Government or under any other organisation/institution/body, etc., wholly or substantially owned or controlled by the Central Government or any State Government.</div>
+            </div>
+
+            <div style="margin-top: 100px; text-align: right;">
+                <div class="sig-line" id="sig-under-name" style="display: inline-block; width: 300px; text-align: center;"></div><br>
+                <div style="font-size:10pt;">Name/designation/signature of the concerned employee</div>
+            </div>
+            
+            <div style="margin-top: 40px; text-align: right;">
+                <div style="font-size:11pt;">Countersigned</div>
+            </div>
+
+            <div class="footnote">[Strike off whatever portion is not applicable]</div>
+        </div>
+
+        <!-- PAGE 3: SPOUSE UNDERTAKING (Only if spouse working = Yes) -->
+        <div class="page" id="page-3">
+            <div class="header-section">
+                <div class="header-title">UNDERTAKING</div>
+                <div style="font-size:10pt;">[under para 1(iii) of instruction in memo no: 13/19/2008-2SII dated 18.5.2009]</div>
+            </div>
+
+            <p class="legal-body">It is hereby undertaken that:</p>
+
+            <div class="para">
+                <div class="para-num">(a)</div>
+                <div class="para-text">I am eligible to draw the benefit promised by the scheme put in place vide memo: 13/19/2008-2SII dated 18.5.2009.</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">(b)</div>
+                <div class="para-text">My entitled family members, including the spouse, who is in the employment of Government of Haryana, and who is also eligible to draw the benefit promised by the scheme put in place vide memo no: 13/19/2008-2SII dated, 19.5.2009 shall not avail the benefit promised by the scheme put in place vide memo no: 13/19/2008-2SII dated 18.5.2009 separately for the current block of four years regulating the LTC.</div>
+            </div>
+
+            <div style="text-align: center; font-weight: bold; margin: 30px 0; font-size: 12pt;">or</div>
+
+            <div class="para">
+                <div class="para-text">My entitled family members, including the spouse, who is in the employment under the Central Government or any other State Government or under any other organisation/institution/body, etc, wholly or substantially owned or controlled by the Central Government or any State Government shall not avail of the facilities of LTC from their employer in whatever form it is extended to him/her by their such respective employer.</div>
+            </div>
+
+            <div style="margin-top: 80px; text-align: right;">
+                <div class="sig-line" id="sig-spouse-emp" style="display: inline-block; width: 300px; text-align: center;"></div><br>
+                <div style="font-size:10pt;">Name/designation/signature of the concerned employee</div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: right;">
+                <div style="font-size:11pt;">Countersigned</div>
+            </div>
+
+            <div style="margin-top: 60px; text-align: right;">
+                <div class="sig-line" id="sig-spouse-spouse" style="display: inline-block; width: 350px; text-align: center;"></div><br>
+                <div style="font-size:10pt;">Name/designation/signature of the spouse of the concerned employee</div>
+            </div>
+
+            <div class="footnote">[Strike off whatever portion is not applicable]</div>
+        </div>
+
+        <!-- PAGE 4: AFFIDAVIT -->
+        <div class="page" id="page-4">
+            <div class="header-section">
+                <div class="header-title">AFFIDAVIT</div>
+            </div>
+            
+            <div style="height: 40px;"></div>
+
+            <div class="legal-body">
+                I, <strong><span id="aff-name"></span></strong>, <span id="aff-desig"></span>, <span id="aff-branch"></span>, 
+                do hereby solemnly affirm and declare as under:
+            </div>
+
+            <div class="para">
+                <div class="para-num">1.</div>
+                <div class="para-text">That I am a permanent employee of the Department/Office mentioned above.</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">2.</div>
+                <div class="para-text">That I am applying for Leave Travel Concession for the Block Year <strong><span id="aff-block"></span></strong> (<span id="aff-block-period"></span>).</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">3.</div>
+                <div class="para-text">That the information furnished in my application is correct to the best of my knowledge and belief.</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">4.</div>
+                <div class="para-text">That neither I nor my entitled family members have drawn LTC for this block year from any other source/employer.</div>
+            </div>
+            
+            <div class="para">
+                <div class="para-num">5.</div>
+                <div class="para-text">That I shall produce the tickets/receipts for the journeys performed within the prescribed time limit.</div>
+            </div>
+
+            <div class="footer-sig">
+                <div>
+                    <div>Place: <span id="aff-place"></span></div>
+                    <div>Date: <span id="aff-date"></span></div>
+                </div>
+                <div class="sig-block">
+                    <div style="margin-bottom: 5px;">Deponent</div>
+                    <div style="font-size:10pt;">(Signature)</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px;">
+                <div style="font-weight: bold; text-decoration: underline;">Verification:</div>
+                <div class="legal-body" style="margin-top: 10px;">
+                    Verified that the contents of my above affidavit are true and correct to the best of my knowledge and nothing has been concealed therein.
+                </div>
+            </div>
+
+            <div class="footer-sig">
+                <div>
+                    <div>Place: <span id="aff-place-2"></span></div>
+                    <div>Date: <span id="aff-date-2"></span></div>
+                </div>
+                <div class="sig-block">
+                    <div style="margin-bottom: 5px;">Deponent</div>
+                    <div style="font-size:10pt;">(Signature)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function toggleSpouseFields() {
+        const working = document.getElementById('in-spouse-working').value;
+        document.getElementById('spouse-fields').style.display = (working === 'Yes') ? 'block' : 'none';
+    }
+
+    function getVal(id, defaultPlaceholder = '__________________________') {
+        const val = document.getElementById(id).value.trim();
+        return val || defaultPlaceholder;
+    }
+
+    function render() {
+        // Proforma
+        document.getElementById('out-block-title').textContent = getVal('in-block', '2020-23');
+        document.getElementById('out-name').textContent = getVal('in-name');
+        document.getElementById('out-fh').textContent = getVal('in-fh');
+        document.getElementById('out-desig').textContent = getVal('in-desig');
+        document.getElementById('out-branch').textContent = getVal('in-branch');
+        document.getElementById('out-pay').textContent = getVal('in-pay');
+        document.getElementById('out-bank').textContent = getVal('in-bank');
+        document.getElementById('out-retire').textContent = getVal('in-retire');
+        document.getElementById('out-contact').textContent = getVal('in-contact');
+        document.getElementById('out-date').textContent = getVal('in-date');
+
+        // Spouse working logic
+        const spouseWorking = document.getElementById('in-spouse-working').value;
+        document.getElementById('spouse-yes-notes').style.display = (spouseWorking === 'Yes') ? 'block' : 'none';
+        document.getElementById('spouse-no-notes').style.display = (spouseWorking === 'No') ? 'block' : 'none';
+        
+        // Show/hide spouse undertaking page
+        document.getElementById('page-3').style.display = (spouseWorking === 'Yes') ? 'block' : 'none';
+
+        // Undertaking signature
+        const name = document.getElementById('in-name').value;
+        const desig = document.getElementById('in-desig').value;
+        const sigText = (name && desig) ? `${name}, ${desig}` : '__________________________';
+        document.getElementById('sig-under-name').textContent = sigText;
+        document.getElementById('sig-spouse-emp').textContent = sigText;
+        
+        // Spouse signature
+        const spouseName = document.getElementById('in-spouse-name').value;
+        const spouseDesig = document.getElementById('in-spouse-desig').value;
+        const spouseSigText = (spouseName && spouseDesig) ? `${spouseName}, ${spouseDesig}` : '__________________________';
+        document.getElementById('sig-spouse-spouse').textContent = spouseSigText;
+
+        // Affidavit
+        document.getElementById('aff-name').textContent = getVal('in-name', '________________');
+        document.getElementById('aff-desig').textContent = getVal('in-desig', '________________');
+        document.getElementById('aff-branch').textContent = getVal('in-branch', '________________');
+        document.getElementById('aff-block').textContent = getVal('in-block', '2020-23');
+        document.getElementById('aff-block-period').textContent = getVal('in-block-period', '01.01.2020 to 31.12.2023');
+        document.getElementById('aff-place').textContent = getVal('in-place', '________________');
+        document.getElementById('aff-date').textContent = getVal('in-date', '________________');
+        document.getElementById('aff-place-2').textContent = getVal('in-place', '________________');
+        document.getElementById('aff-date-2').textContent = getVal('in-date', '________________');
+    }
+
+    // Initialize
+    render();
+
+    function generatePDF() {
+        // Hide page 3 if spouse not working
+        const spouseWorking = document.getElementById('in-spouse-working').value;
+        const page3 = document.getElementById('page-3');
+        const originalDisplay = page3.style.display;
+        
+        if (spouseWorking !== 'Yes') {
+            page3.style.display = 'none';
+        }
+
+        const element = document.getElementById('print-area');
+        const opt = {
+            margin: 0,
+            filename: 'LTC_Application.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+        
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Restore page 3 display
+            page3.style.display = originalDisplay;
+        });
+    }
+
+    function generateWord() {
+        const { Document, Packer, Paragraph, TextRun, TabStopPosition, TabStopType, PageBreak, AlignmentType, LevelFormat, NumberFormat } = docx;
+
+        const getFieldVal = (id, def = '___________________________') => {
+            const val = document.getElementById(id).value.trim();
+            return val || def;
+        };
+
+        // Font and size settings (Times New Roman 12pt)
+        const font = 'Times New Roman';
+        const size = 24; // 12pt in half-points
+        const lineSpacing = 360; // 1.5 line spacing
+
+        // Create row with side-by-side layout using tabs
+        const createRow = (num, label, hiLabel, value) => {
+            return [
+                new Paragraph({
+                    tabStops: [
+                        { position: 720, type: TabStopType.LEFT },
+                        { position: 6000, type: TabStopType.LEFT }
+                    ],
+                    children: [
+                        new TextRun({ text: num, font, size }),
+                        new TextRun({ text: '\t' + label, font, size }),
+                        new TextRun({ text: '\t' + value, font, size })
+                    ],
+                    spacing: { line: lineSpacing, after: 100 }
+                }),
+                new Paragraph({
+                    indent: { left: 720 },
+                    children: [
+                        new TextRun({ text: hiLabel, font: 'Arial', size: 20, italics: true })
+                    ],
+                    spacing: { after: 200 }
+                })
+            ];
+        };
+
+        const spouseWorking = document.getElementById('in-spouse-working').value;
+
+        // Build sections
+        const sections = [];
+
+        // PAGE 1: PROFORMA
+        const page1 = [
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({ 
+                        text: `Performa of L.T.C.for the Block Year (${getFieldVal('in-block', '2020-23')})`, 
+                        font, 
+                        size: 28, 
+                        bold: true, 
+                        underline: {} 
+                    })
+                ],
+                spacing: { after: 600 }
+            }),
+            ...createRow('1', 'Name of Applicant:', '(आवेदक का नाम)', getFieldVal('in-name')),
+            ...createRow('2', 'Father\'s/Husband\'s Name:', '(पिता/पति का नाम)', getFieldVal('in-fh')),
+            ...createRow('3', 'Designation of the Applicant:', '(आवेदक का पद)', getFieldVal('in-desig')),
+            ...createRow('4', 'Name of the Branch:', '(विभाग/कार्यालय)', getFieldVal('in-branch')),
+            ...createRow('5', 'Pay-Head of the Applicant:', '(आवेदक का पे-हैड)', getFieldVal('in-pay')),
+            ...createRow('6', 'Bank A/c No of the Applicant:', '(आवेदक का बैंक खाता नं०)', getFieldVal('in-bank')),
+            ...createRow('7', 'Date of Retirement:', '(आवेदक की सेवानिवृति की तिथि)', getFieldVal('in-retire')),
+            ...createRow('8', 'Whether the spouse is working or not', '(क्या आवेदक का पति या पत्नी कार्यरत है)', 'Yes / No (हाँ / नहीं)'),
+            ...createRow('9', 'Contact No of the Applicant', '(आवेदक का फोन नम्बर)', getFieldVal('in-contact')),
+            new Paragraph({
+                tabStops: [{ position: 7000, type: TabStopType.LEFT }],
+                children: [
+                    new TextRun({ text: `Dated: ${getFieldVal('in-date')}`, font, size }),
+                    new TextRun({ text: '\tSignature of Applicant', font, size })
+                ],
+                spacing: { before: 800, line: lineSpacing }
+            })
+        ];
+
+        sections.push({ properties: {}, children: page1 });
+
+        // PAGE 2: UNDERTAKING
+        const name = document.getElementById('in-name').value;
+        const desig = document.getElementById('in-desig').value;
+        const sigText = (name && desig) ? `${name}, ${desig}` : '___________________________';
+
+        const page2 = [
+            new Paragraph({ children: [new PageBreak()] }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({ text: 'UNDERTAKING', font, size: 28, bold: true, underline: {} })
+                ],
+                spacing: { after: 200 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({ text: '[under para 1(iii) of instruction in memo no: 13/19/2008-2SII dated 18.5.2009]', font, size: 20 })
+                ],
+                spacing: { after: 400 }
+            }),
+            new Paragraph({
+                children: [new TextRun({ text: 'It is hereby undertaken that:', font, size })],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '1.\tI am eligible to draw the benefit promised by the scheme put in place vide memo: 13/19/2008-2SII dated 18.5.2009.', font, size })
+                ],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '2.\tNone amongst my entitled family members, including the spouse, is either in service of Government of Haryana or in service under the Central Government or any other State Government or under any other organisation/institution/body, etc., wholly or substantially owned or controlled by the Central Government or any State Government.', font, size })
+                ],
+                spacing: { after: 800, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [new TextRun({ text: sigText, font, size })],
+                spacing: { after: 100 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [new TextRun({ text: 'Name/designation/signature of the concerned employee', font, size: 20 })],
+                spacing: { after: 400 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [new TextRun({ text: 'Countersigned', font, size })],
+                spacing: { after: 600 }
+            }),
+            new Paragraph({
+                children: [new TextRun({ text: '[Strike off whatever portion is not applicable]', font, size: 20, italics: true })]
+            })
+        ];
+
+        sections.push({ properties: {}, children: page2 });
+
+        // PAGE 3: SPOUSE UNDERTAKING (only if spouse working = Yes)
+        if (spouseWorking === 'Yes') {
+            const spouseName = document.getElementById('in-spouse-name').value;
+            const spouseDesig = document.getElementById('in-spouse-desig').value;
+            const spouseSigText = (spouseName && spouseDesig) ? `${spouseName}, ${spouseDesig}` : '___________________________';
+
+            const page3 = [
+                new Paragraph({ children: [new PageBreak()] }),
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({ text: 'UNDERTAKING', font, size: 28, bold: true, underline: {} })
+                    ],
+                    spacing: { after: 200 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({ text: '[under para 1(iii) of instruction in memo no: 13/19/2008-2SII dated 18.5.2009]', font, size: 20 })
+                    ],
+                    spacing: { after: 400 }
+                }),
+                new Paragraph({
+                    children: [new TextRun({ text: 'It is hereby undertaken that:', font, size })],
+                    spacing: { after: 300, line: lineSpacing }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.JUSTIFIED,
+                    indent: { left: 720, hanging: 360 },
+                    children: [
+                        new TextRun({ text: '(a)\tI am eligible to draw the benefit promised by the scheme put in place vide memo: 13/19/2008-2SII dated 18.5.2009.', font, size })
+                    ],
+                    spacing: { after: 300, line: lineSpacing }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.JUSTIFIED,
+                    indent: { left: 720, hanging: 360 },
+                    children: [
+                        new TextRun({ text: '(b)\tMy entitled family members, including the spouse, who is in the employment of Government of Haryana, and who is also eligible to draw the benefit promised by the scheme put in place vide memo no: 13/19/2008-2SII dated, 19.5.2009 shall not avail the benefit promised by the scheme put in place vide memo no: 13/19/2008-2SII dated 18.5.2009 separately for the current block of four years regulating the LTC.', font, size })
+                    ],
+                    spacing: { after: 400, line: lineSpacing }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new TextRun({ text: 'or', font, size, bold: true })],
+                    spacing: { before: 200, after: 200 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.JUSTIFIED,
+                    children: [
+                        new TextRun({ text: 'My entitled family members, including the spouse, who is in the employment under the Central Government or any other State Government or under any other organisation/institution/body, etc, wholly or substantially owned or controlled by the Central Government or any State Government shall not avail of the facilities of LTC from their employer in whatever form it is extended to him/her by their such respective employer.', font, size })
+                    ],
+                    spacing: { after: 600, line: lineSpacing }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: sigText, font, size })],
+                    spacing: { after: 100 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: 'Name/designation/signature of the concerned employee', font, size: 20 })],
+                    spacing: { after: 400 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: 'Countersigned', font, size })],
+                    spacing: { after: 400 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: spouseSigText, font, size })],
+                    spacing: { after: 100 }
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: 'Name/designation/signature of the spouse of the concerned employee', font, size: 20 })],
+                    spacing: { after: 400 }
+                }),
+                new Paragraph({
+                    children: [new TextRun({ text: '[Strike off whatever portion is not applicable]', font, size: 20, italics: true })]
+                })
+            ];
+
+            sections.push({ properties: {}, children: page3 });
+        }
+
+        // PAGE 4: AFFIDAVIT
+        const page4 = [
+            new Paragraph({ children: [new PageBreak()] }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({ text: 'AFFIDAVIT', font, size: 28, bold: true, underline: {} })
+                ],
+                spacing: { after: 600 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [
+                    new TextRun({ text: `I, `, font, size }),
+                    new TextRun({ text: getFieldVal('in-name', '________________'), font, size, bold: true }),
+                    new TextRun({ text: `, ${getFieldVal('in-desig', '________________')}, ${getFieldVal('in-branch', '________________')}, do hereby solemnly affirm and declare as under:`, font, size })
+                ],
+                spacing: { after: 400, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '1.\tThat I am a permanent employee of the Department/Office mentioned above.', font, size })
+                ],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: `2.\tThat I am applying for Leave Travel Concession for the Block Year ${getFieldVal('in-block', '2020-23')} (${getFieldVal('in-block-period', '01.01.2020 to 31.12.2023')}).`, font, size })
+                ],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '3.\tThat the information furnished in my application is correct to the best of my knowledge and belief.', font, size })
+                ],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '4.\tThat neither I nor my entitled family members have drawn LTC for this block year from any other source/employer.', font, size })
+                ],
+                spacing: { after: 300, line: lineSpacing }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { left: 720, hanging: 360 },
+                children: [
+                    new TextRun({ text: '5.\tThat I shall produce the tickets/receipts for the journeys performed within the prescribed time limit.', font, size })
+                ],
+                spacing: { after: 600, line: lineSpacing }
+            }),
+            new Paragraph({
+                tabStops: [{ position: 7000, type: TabStopType.LEFT }],
+                children: [
+                    new TextRun({ text: `Place: ${getFieldVal('in-place', '________________')}`, font, size }),
+                    new TextRun({ text: '\tDeponent', font, size })
+                ],
+                spacing: { after: 100 }
+            }),
+            new Paragraph({
+                tabStops: [{ position: 7000, type: TabStopType.LEFT }],
+                children: [
+                    new TextRun({ text: `Date: ${getFieldVal('in-date', '________________')}`, font, size }),
+                    new TextRun({ text: '\t(Signature)', font, size: 20 })
+                ],
+                spacing: { after: 600 }
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: 'Verification:', font, size, bold: true, underline: {} })
+                ],
+                spacing: { after: 200 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [
+                    new TextRun({ text: 'Verified that the contents of my above affidavit are true and correct to the best of my knowledge and nothing has been concealed therein.', font, size })
+                ],
+                spacing: { after: 400, line: lineSpacing }
+            }),
+            new Paragraph({
+                tabStops: [{ position: 7000, type: TabStopType.LEFT }],
+                children: [
+                    new TextRun({ text: `Place: ${getFieldVal('in-place', '________________')}`, font, size }),
+                    new TextRun({ text: '\tDeponent', font, size })
+                ],
+                spacing: { after: 100 }
+            }),
+            new Paragraph({
+                tabStops: [{ position: 7000, type: TabStopType.LEFT }],
+                children: [
+                    new TextRun({ text: `Date: ${getFieldVal('in-date', '________________')}`, font, size }),
+                    new TextRun({ text: '\t(Signature)', font, size: 20 })
+                ]
+            })
+        ];
+
+        sections.push({ properties: {}, children: page4 });
+
+        // Create document
+        const doc = new Document({ sections });
+
+        // Save
+        Packer.toBlob(doc).then(blob => {
+            saveAs(blob, 'LTC_Application.docx');
+        });
+    }
+</script>
+</body>
+</html>
